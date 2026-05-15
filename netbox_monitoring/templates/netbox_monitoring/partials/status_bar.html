@@ -1,0 +1,8 @@
+<div class="nbm-bar">
+  {% if counters.ok %}<span class="ok" style="flex:{{ counters.ok }}"></span>{% endif %}
+  {% if counters.reachable %}<span class="ok" style="flex:{{ counters.reachable }}"></span>{% endif %}
+  {% if counters.whitelist %}<span class="wl" style="flex:{{ counters.whitelist }}"></span>{% endif %}
+  {% if counters.no_internet %}<span class="off" style="flex:{{ counters.no_internet }}"></span>{% endif %}
+  {% if counters.unreachable %}<span class="off" style="flex:{{ counters.unreachable }}"></span>{% endif %}
+  {% if counters.unknown %}<span class="un" style="flex:{{ counters.unknown }}"></span>{% endif %}
+</div>

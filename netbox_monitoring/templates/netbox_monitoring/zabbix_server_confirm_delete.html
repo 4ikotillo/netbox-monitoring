@@ -1,0 +1,11 @@
+{% extends 'base/layout.html' %}
+{% block title %}Delete {{ server.name }}{% endblock %}
+{% block content %}
+<h2>Delete Zabbix Server</h2>
+<div class="alert alert-danger"><i class="mdi mdi-alert"></i> Are you sure you want to delete <strong>{{ server.name }}</strong> (<code>{{ server.url }}</code>)?</div>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger"><i class="mdi mdi-trash-can"></i> Yes, delete</button>
+  <a href="{% url 'plugins:netbox_monitoring:zabbix_servers' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+{% endblock %}

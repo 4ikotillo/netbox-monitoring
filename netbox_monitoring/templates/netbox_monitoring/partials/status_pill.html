@@ -1,0 +1,10 @@
+{% if kind == "host" %}
+  {% if status == "reachable" %}<span class="nbm-pill ok">reachable</span>
+  {% elif status == "unreachable" %}<span class="nbm-pill off">unreachable</span>
+  {% else %}<span class="nbm-pill un">unknown</span>{% endif %}
+{% else %}
+  {% if status == "ok" %}<span class="nbm-pill ok">ok</span>
+  {% elif status == "whitelist" %}<span class="nbm-pill wl">whitelist</span>
+  {% elif status == "no_internet" %}<span class="nbm-pill off">no internet</span>
+  {% else %}<span class="nbm-pill un">unknown</span>{% endif %}
+{% endif %}

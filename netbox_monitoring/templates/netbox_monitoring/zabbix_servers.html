@@ -1,0 +1,52 @@
+{% extends 'base/layout.html' %}
+{% block title %}Zabbix Servers{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h2>Zabbix Servers</h2>
+  <div class="d-flex gap-2">
+    <a href="{% url 'plugins:netbox_monitoring:zabbix_server_add' %}" class="btn btn-sm btn-primary"><i class="mdi mdi-plus"></i> Add Server</a>
+    <a href="{% url 'plugins:netbox_monitoring:dashboard' %}" class="btn btn-sm btn-outline-secondary">← Dashboard</a>
+  </div>
+</div>
+{% if messages %}{% for m in messages %}<div class="alert alert-info">{{ m }}</div>{% endfor %}{% endif %}
+<div class="card">
+<table class="table table-hover mb-0">
+  <thead><tr><th>Name</th><th>URL</th><th>Auth</th><th>Active</th><th>Actions</th></tr></thead>
+  <tbody>
+  {% for srv in servers %}
+    <tr>
+      <td><strong>{{ srv.name }}</strong></td>
+      <td><code>{{ srv.url }}</code></td>
+      <td>
+        {% if srv.token %}<span class="badge bg-info text-dark">Token</span>
+        {% elif srv.username %}<span class="badge bg-secondary">{{ srv.username }} / password</span>
+        {% else %}<span class="badge bg-danger">Not configured</span>{% endif %}
+      </td>
+      <td>{% if srv.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Disabled</span>{% endif %}</td>
+      <td class="d-flex gap-2 align-items-center">
+        <button class="btn btn-sm btn-outline-primary" onclick="testServer({{ srv.pk }}, this)"><i class="mdi mdi-connection"></i> Test</button>
+        <a href="{% url 'plugins:netbox_monitoring:zabbix_server_edit' srv.pk %}" class="btn btn-sm btn-outline-warning"><i class="mdi mdi-pencil"></i></a>
+        <a href="{% url 'plugins:netbox_monitoring:zabbix_server_delete' srv.pk %}" class="btn btn-sm btn-outline-danger"><i class="mdi mdi-trash-can"></i></a>
+        <span id="result-{{ srv.pk }}" class="ms-1 small"></span>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5" class="text-muted text-center py-3">No Zabbix servers. <a href="{% url 'plugins:netbox_monitoring:zabbix_server_add' %}">Add one</a>.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<script>
+function testServer(pk, btn) {
+  btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = 'Testing...';
+  fetch(`/plugins/monitoring/zabbix/${pk}/test/`, {
+    method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}
+  }).then(r => r.json()).then(data => {
+    document.getElementById(`result-${pk}`).innerHTML = data.ok
+      ? `<span class="text-success">✓ ${data.message}</span>`
+      : `<span class="text-danger">✗ ${data.message}</span>`;
+    btn.disabled = false; btn.innerHTML = orig;
+  });
+}
+</script>
+{% endblock %}

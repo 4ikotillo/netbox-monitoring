@@ -1,0 +1,75 @@
+{% extends 'base/layout.html' %}
+{% block title %}{{ host.device.name }}{% endblock %}
+{% block content %}
+{% include 'netbox_monitoring/partials/styles.html' %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px">Host</div>
+    <h2 class="mb-0">{{ host.device.name }}</h2>
+    <div class="text-muted small">
+      {% if host.device.device_type %}{{ host.device.device_type.manufacturer.name }} {{ host.device.device_type.model }}{% endif %}
+      {% if host.device.primary_ip4 %} &middot; <code>{{ host.device.primary_ip4.address.ip }}</code>{% endif %}
+      {% if host.device.site %} &middot; <a href="{{ host.device.site.get_absolute_url }}">{{ host.device.site.name }}</a>{% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ host.device.get_absolute_url }}" class="btn btn-sm btn-outline-secondary"><i class="mdi mdi-open-in-new"></i> Open in NetBox</a>
+    <a href="{% url 'plugins:netbox_monitoring:dashboard' %}" class="btn btn-sm btn-outline-secondary">← Dashboard</a>
+  </div>
+</div>
+
+{% if messages %}{% for m in messages %}<div class="alert alert-info">{{ m }}</div>{% endfor %}{% endif %}
+
+{% if suggestions %}
+<div class="nbm-suggest">
+  <h5><i class="mdi mdi-lightbulb-outline"></i> Suggested modems for this host</h5>
+  <div class="si">Detector found {{ suggestions|length }} potential modem(s) based on device type and interfaces.</div>
+  <ul class="mb-2 small">
+  {% for s in suggestions %}
+    <li><strong>{{ s.name }}</strong>{% if s.interface_name %} on <code>{{ s.interface_name }}</code>{% endif %}{% if s.hint %} — <span class="text-muted">{{ s.hint }}</span>{% endif %}</li>
+  {% endfor %}
+  </ul>
+  <form method="post" action="{% url 'plugins:netbox_monitoring:host_autodetect' host.pk %}" style="display:inline">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-warning"><i class="mdi mdi-auto-fix"></i> Add all suggested</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h4 class="mb-0">Modems</h4>
+  <a href="{% url 'plugins:netbox_monitoring:modem_add' host.pk %}" class="btn btn-sm btn-primary"><i class="mdi mdi-plus"></i> Add modem manually</a>
+</div>
+
+<div class="card">
+<table class="table table-hover mb-0 align-middle">
+  <thead>
+    <tr><th>Name</th><th>Interface</th><th>Lookup</th><th>Value</th><th>Enabled</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for m in modems %}
+    <tr>
+      <td><strong>{{ m.name }}</strong></td>
+      <td>{% if m.interface %}<code>{{ m.interface.name }}</code>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+      <td><span class="badge bg-secondary">{{ m.get_lookup_strategy_display }}</span></td>
+      <td>{% if m.lookup_value %}<code>{{ m.lookup_value }}</code>{% else %}<span class="text-warning small">not set</span>{% endif %}</td>
+      <td>{% if m.enabled %}<i class="mdi mdi-check text-success"></i>{% else %}<i class="mdi mdi-close text-muted"></i>{% endif %}</td>
+      <td class="d-flex gap-1">
+        <a href="{% url 'plugins:netbox_monitoring:modem_edit' m.pk %}" class="btn btn-sm btn-outline-warning"><i class="mdi mdi-pencil"></i></a>
+        <form method="post" action="{% url 'plugins:netbox_monitoring:modem_delete' m.pk %}" style="display:inline" onsubmit="return confirm('Delete modem {{ m.name }}?')">
+          {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger"><i class="mdi mdi-trash-can"></i></button>
+        </form>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="text-muted text-center py-4">
+      No modems on this host.
+      {% if suggestions %}Use <strong>Add all suggested</strong> above, or{% endif %}
+      <a href="{% url 'plugins:netbox_monitoring:modem_add' host.pk %}">add one manually</a>.
+    </td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends 'base/layout.html' %}
+{% block title %}Monitoring{% endblock %}
+{% block content %}
+{% include 'netbox_monitoring/partials/styles.html' %}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h2 class="mb-0">Monitoring</h2>
+  <div class="d-flex gap-2">
+    <a href="{% url 'plugins:netbox_monitoring:group_add' %}" class="btn btn-sm btn-primary">
+      <i class="mdi mdi-plus"></i> New group
+    </a>
+    <a href="{% url 'plugins:netbox_monitoring:zabbix_servers' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="mdi mdi-cog"></i> Zabbix
+    </a>
+  </div>
+</div>
+
+{% if messages %}{% for m in messages %}<div class="alert alert-info">{{ m }}</div>{% endfor %}{% endif %}
+{% if not has_backend %}<div class="alert alert-warning"><i class="mdi mdi-alert"></i> Zabbix not configured. <a href="{% url 'plugins:netbox_monitoring:zabbix_servers' %}">Set up</a>.</div>{% endif %}
+
+<div class="nbm-totals">
+  <div class="nbm-tot">
+    <div class="l">Hosts reachable</div>
+    <div class="v" style="color:#1D9E75">{{ totals.host_ok }}<small style="color:#888;font-size:13px;font-weight:400"> / {{ totals.host_total }}</small></div>
+  </div>
+  <div class="nbm-tot">
+    <div class="l">Hosts down</div>
+    <div class="v" style="color:#A32D2D">{{ totals.host_down }}</div>
+  </div>
+  <div class="nbm-tot">
+    <div class="l">Modems online</div>
+    <div class="v" style="color:#1D9E75">{{ totals.modem_ok }}<small style="color:#888;font-size:13px;font-weight:400"> / {{ totals.modem_total }}</small></div>
+  </div>
+  <div class="nbm-tot">
+    <div class="l">Modems issues</div>
+    <div class="v" style="color:#BA7517">{{ totals.modem_wl }}<small style="color:#A32D2D;font-size:13px;font-weight:400"> + {{ totals.modem_off }} off</small></div>
+  </div>
+</div>
+
+<div class="nbm-section-h"><span>Sites</span></div>
+<div class="nbm-grid">
+  {% for s in site_cards %}
+    {% if s.not_configured %}
+      <a href="{% url 'plugins:netbox_monitoring:site_detail' s.site.slug %}" class="nbm-card nbm-noconf text-decoration-none">
+        <div class="head"><span class="name"><span class="nbm-dot" style="background:#bbb"></span>{{ s.site.name }}</span></div>
+        <div style="font-size:13px">{{ s.available_count }} device(s) available</div>
+        <div style="font-size:12px;color:#999"><i class="mdi mdi-cog"></i> Click to setup</div>
+      </a>
+    {% else %}
+      <div class="nbm-card">
+        <div class="head">
+          <a href="{% url 'plugins:netbox_monitoring:site_detail' s.site.slug %}" class="name">
+            {% if s.hint.severity == 'danger' %}<span class="nbm-dot" style="background:#E24B4A"></span>
+            {% elif s.hint.severity == 'warn' %}<span class="nbm-dot" style="background:#EF9F27"></span>
+            {% elif s.hint.severity == 'ok' %}<span class="nbm-dot" style="background:#1D9E75"></span>
+            {% else %}<span class="nbm-dot" style="background:#bbb"></span>{% endif %}
+            {{ s.site.name }}
+          </a>
+        </div>
+        <div class="nbm-stats">
+          <div>
+            <div class="lbl">Hosts</div>
+            <div class="val">{{ s.summary.host_total }}</div>
+            <div class="sub">
+              <span style="color:#1D9E75">{{ s.summary.host_counters.reachable }} up</span>
+              {% if s.summary.host_counters.unreachable %}<span style="color:#A32D2D">&middot; {{ s.summary.host_counters.unreachable }} down</span>{% endif %}
+            </div>
+          </div>
+          <div>
+            <div class="lbl">Modems</div>
+            <div class="val">{{ s.summary.modem_total }}</div>
+            <div class="sub">
+              <span style="color:#1D9E75">{{ s.summary.modem_counters.ok }} ok</span>
+              {% if s.summary.modem_counters.whitelist %}<span style="color:#BA7517">&middot; {{ s.summary.modem_counters.whitelist }} wl</span>{% endif %}
+              {% if s.summary.modem_counters.no_internet %}<span style="color:#A32D2D">&middot; {{ s.summary.modem_counters.no_internet }} off</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% with counters=s.summary.modem_counters %}
+          {% include 'netbox_monitoring/partials/status_bar.html' %}
+        {% endwith %}
+      </div>
+    {% endif %}
+  {% empty %}
+    <div class="nbm-empty" style="grid-column:1/-1">No sites with devices yet.</div>
+  {% endfor %}
+</div>
+
+<div class="nbm-section-h">
+  <span>Custom groups</span>
+  <a href="{% url 'plugins:netbox_monitoring:group_add' %}" class="btn btn-sm btn-outline-primary py-0" style="font-size:11px"><i class="mdi mdi-plus"></i> New</a>
+</div>
+<div class="nbm-grid">
+  {% for g in group_cards %}
+    <div class="nbm-card">
+      <div class="head">
+        <a href="{% url 'plugins:netbox_monitoring:group_detail' g.group.pk %}" class="name">
+          {% if g.hint.severity == 'danger' %}<span class="nbm-dot" style="background:#E24B4A"></span>
+          {% elif g.hint.severity == 'warn' %}<span class="nbm-dot" style="background:#EF9F27"></span>
+          {% elif g.hint.severity == 'ok' %}<span class="nbm-dot" style="background:#1D9E75"></span>
+          {% else %}<span class="nbm-dot" style="background:#bbb"></span>{% endif %}
+          {{ g.group.name }}
+        </a>
+        <span style="font-size:11px;color:#888">{{ g.summary.host_total }} host</span>
+      </div>
+      {% if g.group.description %}<div style="font-size:12px;color:#888">{{ g.group.description }}</div>{% endif %}
+      <div class="nbm-stats">
+        <div><div class="lbl">Hosts</div><div class="val">{{ g.summary.host_total }}</div></div>
+        <div><div class="lbl">Modems</div><div class="val">{{ g.summary.modem_total }}</div></div>
+      </div>
+      {% with counters=g.summary.modem_counters %}
+        {% include 'netbox_monitoring/partials/status_bar.html' %}
+      {% endwith %}
+    </div>
+  {% empty %}
+    <div class="nbm-empty" style="grid-column:1/-1">No custom groups. <a href="{% url 'plugins:netbox_monitoring:group_add' %}">Create one</a> to mix devices from sites.</div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -13,6 +13,7 @@ class NetBoxMonitoringConfig(PluginConfig):
 
     def ready(self):
         super().ready()
+        # Триггерим регистрацию детекторов
         from . import detectors  # noqa
 
 

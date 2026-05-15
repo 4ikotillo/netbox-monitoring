@@ -1,0 +1,14 @@
+{% if hint %}
+<div class="nbm-hint nbm-hint-{{ hint.severity }}">
+  <span class="nbm-hint-icon">
+    {% if hint.severity == "ok" %}<i class="mdi mdi-check-circle"></i>
+    {% elif hint.severity == "warn" %}<i class="mdi mdi-alert"></i>
+    {% elif hint.severity == "danger" %}<i class="mdi mdi-alert-octagon"></i>
+    {% else %}<i class="mdi mdi-information"></i>{% endif %}
+  </span>
+  <div>
+    <div class="nbm-hint-title">{{ hint.title }}</div>
+    {% if hint.detail %}<div class="nbm-hint-detail">{{ hint.detail }}</div>{% endif %}
+  </div>
+</div>
+{% endif %}
